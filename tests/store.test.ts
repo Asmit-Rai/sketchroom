@@ -40,3 +40,25 @@ describe('store: add', () => {
     expect(useScene.getState().elements[0].id).toBe(id);
   });
 });
+
+describe('store: move', () => {
+  it.each(samples)('moves a $type by dx, dy, and its points move too', (sample) => {
+    const id = useScene.getState().addElement(sample);
+    const before = useScene.getState().elements[0];
+    useScene.getState().moveElement(id, 5, -10);
+    const after = useScene.getState().elements[0];
+    expect(after).toEqual({
+      ...before,
+      x: sample.x + 5,
+      y: sample.y - 10,
+      ...(sample.points && { points: sample.points.map(([px, py]) => [px + 5, py - 10]) }),
+    });
+  });
+
+  it('moves only the element with that id', () => {
+    const first = useScene.getState().addElement(samples[0]);
+    useScene.getState().addElement(samples[2]);
+    useScene.getState().moveElement(first, 1, 1);
+    expect(useScene.getState().elements[1]).toMatchObject(samples[2]);
+  });
+});
