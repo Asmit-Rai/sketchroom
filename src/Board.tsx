@@ -71,7 +71,13 @@ function Shape({ el }: { el: SceneElement }) {
   return (
     <g data-id={el.id} data-type={el.type}>
       {el.type === 'text' ? (
-        <text x={el.x} y={el.y} fontSize={el.h} dominantBaseline="hanging">
+        <text
+          x={el.x}
+          y={el.y}
+          fontSize={el.h}
+          fontFamily="Caveat, cursive"
+          dominantBaseline="hanging"
+        >
           {el.text}
         </text>
       ) : (
