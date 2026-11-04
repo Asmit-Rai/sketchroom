@@ -1,5 +1,16 @@
+import { type MouseEvent, useState } from 'react';
 import rough from 'roughjs';
-import { type Point, type SceneElement, useScene } from './store';
+import { type NewElement, type Point, type SceneElement, useScene } from './store';
+
+type Tool = 'rect' | 'diamond' | 'ellipse' | 'arrow' | 'line';
+
+const tools: { tool: Tool; label: string }[] = [
+  { tool: 'rect', label: 'Rectangle' },
+  { tool: 'diamond', label: 'Diamond' },
+  { tool: 'ellipse', label: 'Ellipse' },
+  { tool: 'arrow', label: 'Arrow' },
+  { tool: 'line', label: 'Line' },
+];
 
 const generator = rough.generator();
 
@@ -67,13 +78,65 @@ function Shape({ el }: { el: SceneElement }) {
   );
 }
 
+// the shape a drag from start to end draws with a drag tool
+function dragged(tool: Tool, [x0, y0]: Point, [x1, y1]: Point): NewElement {
+  const box = { x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
+  if (tool === 'line' || tool === 'arrow') {
+    return { type: tool, ...box, points: [[x0, y0], [x1, y1]] };
+  }
+  return { type: tool, ...box };
+}
+
+function boardPoint(e: MouseEvent<SVGSVGElement>): Point {
+  const rect = e.currentTarget.getBoundingClientRect();
+  return [e.clientX - rect.left, e.clientY - rect.top];
+}
+
 export default function Board() {
   const elements = useScene((state) => state.elements);
+  const [tool, setTool] = useState<Tool>('rect');
+  const [drag, setDrag] = useState<{ start: Point; end: Point } | null>(null);
+  const draft = drag && dragged(tool, drag.start, drag.end);
+
+  function onMouseDown(e: MouseEvent<SVGSVGElement>) {
+    const point = boardPoint(e);
+    setDrag({ start: point, end: point });
+  }
+
+  function onMouseMove(e: MouseEvent<SVGSVGElement>) {
+    if (drag) setDrag({ ...drag, end: boardPoint(e) });
+  }
+
+  function onMouseUp(e: MouseEvent<SVGSVGElement>) {
+    if (!drag) return;
+    const element = dragged(tool, drag.start, boardPoint(e));
+    if (element.w > 0 || element.h > 0) useScene.getState().addElement(element);
+    setDrag(null);
+  }
+
   return (
-    <svg data-testid="board">
-      {elements.map((el) => (
-        <Shape key={el.id} el={el} />
-      ))}
-    </svg>
+    <>
+      <div role="toolbar">
+        {tools.map(({ tool: t, label }) => (
+          <button key={t} type="button" aria-pressed={tool === t} onClick={() => setTool(t)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <svg
+        data-testid="board"
+        width="100%"
+        height="600"
+        style={{ display: 'block', border: '1px solid #ccc' }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+      >
+        {elements.map((el) => (
+          <Shape key={el.id} el={el} />
+        ))}
+        {draft && <Shape el={{ ...draft, id: 'draft', seed: 1 }} />}
+      </svg>
+    </>
   );
 }
