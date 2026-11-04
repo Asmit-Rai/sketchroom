@@ -1,11 +1,17 @@
 import { useEffect } from 'react';
 import Board from './Board';
-import { saveScene } from './persist';
+import { loadScene, saveScene } from './persist';
 import { useScene } from './store';
 
 export default function App() {
   const empty = useScene((state) => state.elements.length === 0);
   const { undo, redo } = useScene.getState();
+
+  // restore the saved board once, before autosave starts listening
+  useEffect(() => {
+    const saved = loadScene();
+    if (saved) useScene.getState().loadElements(saved);
+  }, []);
 
   // autosave: 300 ms after the last change to the elements
   useEffect(() => {
