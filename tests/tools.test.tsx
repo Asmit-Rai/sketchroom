@@ -91,3 +91,16 @@ describe('drag tools', () => {
     expect(useScene.getState().elements).toHaveLength(0);
   });
 });
+
+describe('freehand tool', () => {
+  it('a drag adds an open polyline of the pointer points', () => {
+    clickButton('Freehand');
+    drag([[10, 20], [30, 40], [60, 30], [110, 70]]);
+    expect(useScene.getState().elements).toHaveLength(1);
+    expect(useScene.getState().elements[0]).toMatchObject({
+      type: 'polyline', x: 10, y: 20, w: 100, h: 50,
+      points: [[10, 20], [30, 40], [60, 30], [110, 70]],
+    });
+    expect(board().querySelectorAll('[data-type="polyline"] path').length).toBeGreaterThan(0);
+  });
+});
