@@ -7,6 +7,7 @@ export default function App() {
   const empty = useScene((state) => state.elements.length === 0);
   const { undo, redo } = useScene.getState();
   const [notice, setNotice] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   // restore the saved board once, before autosave starts listening
   useEffect(() => {
@@ -27,7 +28,14 @@ export default function App() {
     const unsubscribe = useScene.subscribe((state, previous) => {
       if (state.elements === previous.elements) return;
       clearTimeout(timer);
-      timer = setTimeout(() => saveScene(state.elements), 300);
+      timer = setTimeout(() => {
+        try {
+          saveScene(state.elements);
+          setWarning(null);
+        } catch {
+          setWarning('Your latest changes could not be saved: the browser storage is full.');
+        }
+      }, 300);
     });
     return () => {
       unsubscribe();
@@ -61,6 +69,11 @@ export default function App() {
       {notice && (
         <p role="alert" data-testid="notice">
           {notice}
+        </p>
+      )}
+      {warning && (
+        <p role="alert" data-testid="warning">
+          {warning}
         </p>
       )}
       {empty && <p data-testid="empty-hint">Pick a tool, then drag on the board to draw.</p>}
