@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type MouseEvent, useState } from 'react';
+import { type KeyboardEvent, type MouseEvent, useEffect, useState } from 'react';
 import rough from 'roughjs';
 import {
   type Box,
@@ -156,6 +156,17 @@ export default function Board() {
     return handle ? resizeTo(el, resizedBox(el, handle, offset(drag))) : moveBy(el, ...offset(drag));
   });
   const selection = shown.find((el) => el.id === selected);
+
+  useEffect(() => {
+    function onKeyDown(e: globalThis.KeyboardEvent) {
+      if (selected && (e.key === 'Delete' || e.key === 'Backspace')) {
+        useScene.getState().deleteElement(selected);
+        setSelected(null);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selected]);
 
   // the topmost shape whose box (plus a few pixels, for flat lines) holds the point
   function hit([x, y]: Point) {
