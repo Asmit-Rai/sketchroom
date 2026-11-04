@@ -104,3 +104,53 @@ describe('freehand tool', () => {
     expect(board().querySelectorAll('[data-type="polyline"] path').length).toBeGreaterThan(0);
   });
 });
+
+describe('text tool', () => {
+  function textInput(): HTMLInputElement | null {
+    return container.querySelector('input[data-testid="text-input"]');
+  }
+
+  function key(target: Element, name: string) {
+    act(() => {
+      target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true }));
+    });
+  }
+
+  function clickBoard(x: number, y: number) {
+    mouse('mousedown', x, y);
+    mouse('mouseup', x, y);
+  }
+
+  it('click, type, Enter adds a text element at the click point', () => {
+    clickButton('Text');
+    clickBoard(40, 50);
+    const input = textInput();
+    expect(input).not.toBeNull();
+    input!.value = 'Hello';
+    key(input!, 'Enter');
+
+    const elements = useScene.getState().elements;
+    expect(elements).toHaveLength(1);
+    expect(elements[0]).toMatchObject({ type: 'text', text: 'Hello', x: 40, y: 50 });
+    expect(elements[0].w).toBeGreaterThan(0);
+    expect(elements[0].h).toBeGreaterThan(0);
+    expect(textInput()).toBeNull();
+    expect(board().querySelector('[data-type="text"] text')?.textContent).toBe('Hello');
+  });
+
+  it('Escape adds nothing', () => {
+    clickButton('Text');
+    clickBoard(40, 50);
+    textInput()!.value = 'Hello';
+    key(textInput()!, 'Escape');
+    expect(useScene.getState().elements).toHaveLength(0);
+    expect(textInput()).toBeNull();
+  });
+
+  it('Enter with no text adds nothing', () => {
+    clickButton('Text');
+    clickBoard(40, 50);
+    key(textInput()!, 'Enter');
+    expect(useScene.getState().elements).toHaveLength(0);
+  });
+});
