@@ -23,6 +23,7 @@ interface SceneState {
   addElement: (element: NewElement) => string;
   moveElement: (id: string, dx: number, dy: number) => void;
   resizeElement: (id: string, box: Box) => void;
+  deleteElement: (id: string) => void;
 }
 
 // roughjs treats seed 0 as "random every time", so seeds start at 1
@@ -65,4 +66,6 @@ export const useScene = create<SceneState>()((set) => ({
     set((state) => ({
       elements: state.elements.map((el) => (el.id === id ? resizeTo(el, box) : el)),
     })),
+  deleteElement: (id) =>
+    set((state) => ({ elements: state.elements.filter((el) => el.id !== id) })),
 }));
