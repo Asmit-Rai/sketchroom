@@ -2,7 +2,7 @@ import { type MouseEvent, useState } from 'react';
 import rough from 'roughjs';
 import { type NewElement, type Point, type SceneElement, useScene } from './store';
 
-type Tool = 'rect' | 'diamond' | 'ellipse' | 'arrow' | 'line';
+type Tool = 'rect' | 'diamond' | 'ellipse' | 'arrow' | 'line' | 'polyline';
 
 const tools: { tool: Tool; label: string }[] = [
   { tool: 'rect', label: 'Rectangle' },
@@ -10,6 +10,7 @@ const tools: { tool: Tool; label: string }[] = [
   { tool: 'ellipse', label: 'Ellipse' },
   { tool: 'arrow', label: 'Arrow' },
   { tool: 'line', label: 'Line' },
+  { tool: 'polyline', label: 'Freehand' },
 ];
 
 const generator = rough.generator();
@@ -78,13 +79,21 @@ function Shape({ el }: { el: SceneElement }) {
   );
 }
 
-// the shape a drag from start to end draws with a drag tool
-function dragged(tool: Tool, [x0, y0]: Point, [x1, y1]: Point): NewElement {
-  const box = { x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
-  if (tool === 'line' || tool === 'arrow') {
-    return { type: tool, ...box, points: [[x0, y0], [x1, y1]] };
-  }
-  return { type: tool, ...box };
+function bounds(points: Point[]) {
+  const xs = points.map(([x]) => x);
+  const ys = points.map(([, y]) => y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+}
+
+// the shape a drag through these points draws: freehand keeps every point,
+// the other tools use only the start and the end
+function dragged(tool: Tool, points: Point[]): NewElement {
+  if (tool === 'polyline') return { type: tool, ...bounds(points), points };
+  const ends: Point[] = [points[0], points[points.length - 1]];
+  if (tool === 'line' || tool === 'arrow') return { type: tool, ...bounds(ends), points: ends };
+  return { type: tool, ...bounds(ends) };
 }
 
 function boardPoint(e: MouseEvent<SVGSVGElement>): Point {
@@ -95,21 +104,21 @@ function boardPoint(e: MouseEvent<SVGSVGElement>): Point {
 export default function Board() {
   const elements = useScene((state) => state.elements);
   const [tool, setTool] = useState<Tool>('rect');
-  const [drag, setDrag] = useState<{ start: Point; end: Point } | null>(null);
-  const draft = drag && dragged(tool, drag.start, drag.end);
+  // the pointer points of the drag in progress: the mouse-down point, then every move
+  const [drag, setDrag] = useState<Point[] | null>(null);
+  const draft = drag && dragged(tool, drag);
 
   function onMouseDown(e: MouseEvent<SVGSVGElement>) {
-    const point = boardPoint(e);
-    setDrag({ start: point, end: point });
+    setDrag([boardPoint(e)]);
   }
 
   function onMouseMove(e: MouseEvent<SVGSVGElement>) {
-    if (drag) setDrag({ ...drag, end: boardPoint(e) });
+    if (drag) setDrag([...drag, boardPoint(e)]);
   }
 
-  function onMouseUp(e: MouseEvent<SVGSVGElement>) {
+  function onMouseUp() {
     if (!drag) return;
-    const element = dragged(tool, drag.start, boardPoint(e));
+    const element = dragged(tool, drag);
     if (element.w > 0 || element.h > 0) useScene.getState().addElement(element);
     setDrag(null);
   }
