@@ -24,6 +24,34 @@ export default function App() {
     download(new Blob([text], { type: 'application/json' }), 'sketchroom.json');
   }
 
+  // draws the board's SVG onto an off-screen canvas, only to encode it as a PNG file
+  function exportPng() {
+    const svg = document.querySelector<SVGSVGElement>('svg[data-testid="board"]');
+    if (!svg) return;
+    const { width, height } = svg.getBoundingClientRect();
+    const copy = svg.cloneNode(true) as SVGSVGElement;
+    copy.setAttribute('width', String(width));
+    copy.setAttribute('height', String(height));
+    const svgText = new XMLSerializer().serializeToString(copy);
+    const url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      context.fillStyle = 'white';
+      context.fillRect(0, 0, width, height);
+      context.drawImage(image, 0, 0);
+      canvas.toBlob((png) => {
+        if (png) download(png, 'sketchroom.png');
+      }, 'image/png');
+    };
+    image.src = url;
+  }
+
   async function importJson(e: ChangeEvent<HTMLInputElement>) {
     const input = e.currentTarget;
     const file = input.files?.[0];
@@ -100,6 +128,9 @@ export default function App() {
         </button>
         <button type="button" onClick={() => importInput.current?.click()}>
           Import JSON
+        </button>
+        <button type="button" onClick={exportPng}>
+          Export PNG
         </button>
         <input
           ref={importInput}
