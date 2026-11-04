@@ -169,3 +169,73 @@ describe('corrupt saved data', () => {
     expect(localStorage.getItem(BACKUP)).toBe('garbage');
   });
 });
+
+describe('storage full', () => {
+  function warning() {
+    return container.querySelector('[data-testid="warning"]');
+  }
+
+  function failSaves() {
+    return vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+    });
+  }
+
+  function dragRectangle(from: [number, number], to: [number, number]) {
+    const button = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Rectangle');
+    act(() => button!.click());
+    const board = container.querySelector('svg[data-testid="board"]')!;
+    for (const [type, [x, y]] of [['mousedown', from], ['mousemove', to], ['mouseup', to]] as const) {
+      act(() => {
+        board.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y, button: 0 }));
+      });
+    }
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('a failed save shows a warning and does not crash', () => {
+    renderApp();
+    const setItem = failSaves();
+    act(() => {
+      useScene.getState().addElement(rect);
+    });
+    expect(warning()).toBeNull();
+    expect(() => wait(300)).not.toThrow();
+    expect(setItem).toHaveBeenCalled();
+    expect(warning()?.textContent).toMatch(/could not be saved/);
+    expect(useScene.getState().elements).toHaveLength(1);
+  });
+
+  it('drawing still works after a failed save', () => {
+    renderApp();
+    failSaves();
+    act(() => {
+      useScene.getState().addElement(rect);
+    });
+    wait(300);
+    dragRectangle([200, 200], [260, 240]);
+    wait(300);
+    expect(useScene.getState().elements).toHaveLength(2);
+    expect(container.querySelectorAll('svg[data-testid="board"] [data-id]')).toHaveLength(2);
+    expect(warning()).not.toBeNull();
+  });
+
+  it('the warning goes once a later save works', () => {
+    renderApp();
+    const setItem = failSaves();
+    act(() => {
+      useScene.getState().addElement(rect);
+    });
+    wait(300);
+    setItem.mockRestore();
+    act(() => {
+      useScene.getState().addElement({ ...rect, type: 'ellipse' });
+    });
+    wait(300);
+    expect(warning()).toBeNull();
+    expect(saved().elements).toHaveLength(2);
+  });
+});
