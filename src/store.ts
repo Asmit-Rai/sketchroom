@@ -16,11 +16,13 @@ export interface SceneElement {
 }
 
 export type NewElement = Omit<SceneElement, 'id' | 'seed'>;
+export type Box = Pick<SceneElement, 'x' | 'y' | 'w' | 'h'>;
 
 interface SceneState {
   elements: SceneElement[];
   addElement: (element: NewElement) => string;
   moveElement: (id: string, dx: number, dy: number) => void;
+  resizeElement: (id: string, box: Box) => void;
 }
 
 // roughjs treats seed 0 as "random every time", so seeds start at 1
@@ -34,6 +36,20 @@ function moveBy(el: SceneElement, dx: number, dy: number): SceneElement {
   return moved;
 }
 
+function resizeTo(el: SceneElement, box: Box): SceneElement {
+  const resized = { ...el, ...box };
+  // a zero-size side has all its points on one coordinate, so any scale works there
+  const sx = el.w ? box.w / el.w : 1;
+  const sy = el.h ? box.h / el.h : 1;
+  if (el.points) {
+    resized.points = el.points.map(([px, py]): Point => [
+      box.x + (px - el.x) * sx,
+      box.y + (py - el.y) * sy,
+    ]);
+  }
+  return resized;
+}
+
 export const useScene = create<SceneState>()((set) => ({
   elements: [],
   addElement: (element) => {
@@ -44,5 +60,9 @@ export const useScene = create<SceneState>()((set) => ({
   moveElement: (id, dx, dy) =>
     set((state) => ({
       elements: state.elements.map((el) => (el.id === id ? moveBy(el, dx, dy) : el)),
+    })),
+  resizeElement: (id, box) =>
+    set((state) => ({
+      elements: state.elements.map((el) => (el.id === id ? resizeTo(el, box) : el)),
     })),
 }));
