@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Board from './Board';
 import { loadScene, saveScene } from './persist';
 import { useScene } from './store';
@@ -6,11 +6,19 @@ import { useScene } from './store';
 export default function App() {
   const empty = useScene((state) => state.elements.length === 0);
   const { undo, redo } = useScene.getState();
+  const [notice, setNotice] = useState<string | null>(null);
 
   // restore the saved board once, before autosave starts listening
   useEffect(() => {
     const saved = loadScene();
-    if (saved) useScene.getState().loadElements(saved);
+    if (!saved) return;
+    useScene.getState().loadElements(saved.elements);
+    if (saved.corrupt) {
+      setNotice(
+        'The saved board could not be read, so an empty board was started. ' +
+          'The saved text was kept in sketchroom:scene:backup.',
+      );
+    }
   }, []);
 
   // autosave: 300 ms after the last change to the elements
@@ -50,6 +58,11 @@ export default function App() {
           Redo
         </button>
       </div>
+      {notice && (
+        <p role="alert" data-testid="notice">
+          {notice}
+        </p>
+      )}
       {empty && <p data-testid="empty-hint">Pick a tool, then drag on the board to draw.</p>}
       <Board />
     </main>
