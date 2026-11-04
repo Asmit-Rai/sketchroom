@@ -91,3 +91,33 @@ describe('autosave', () => {
     expect(document.cookie).toBe('');
   });
 });
+
+describe('restore on load', () => {
+  const stored = [
+    { id: 'a', type: 'rect', x: 10, y: 20, w: 100, h: 50, seed: 7 },
+    { id: 'b', type: 'line', x: 0, y: 0, w: 30, h: 40, points: [[0, 0], [30, 40]], seed: 8 },
+    { id: 'c', type: 'text', x: 5, y: 5, w: 60, h: 24, text: 'Hi', seed: 9 },
+  ];
+
+  it('reads sketchroom:scene:v1 and shows the saved shapes', () => {
+    localStorage.setItem(KEY, JSON.stringify({ elements: stored }));
+    renderApp();
+    expect(useScene.getState().elements).toEqual(stored);
+    const shown = [...container.querySelectorAll('svg[data-testid="board"] [data-id]')];
+    expect(shown.map((g) => g.getAttribute('data-id'))).toEqual(['a', 'b', 'c']);
+    expect(container.querySelector('[data-testid="empty-hint"]')).toBeNull();
+  });
+
+  it('the restored board is not an undo step', () => {
+    localStorage.setItem(KEY, JSON.stringify({ elements: stored }));
+    renderApp();
+    act(() => useScene.getState().undo());
+    expect(useScene.getState().elements).toEqual(stored);
+  });
+
+  it('starts an empty board when nothing is saved', () => {
+    renderApp();
+    expect(useScene.getState().elements).toEqual([]);
+    expect(container.querySelector('[data-testid="empty-hint"]')).not.toBeNull();
+  });
+});
