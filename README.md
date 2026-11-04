@@ -14,11 +14,22 @@ npm run lint       # run ESLint
 npm run typecheck  # run tsc --noEmit
 ```
 
+Browser test (Playwright, Chromium only). Install Chromium once, then run it:
+
+```sh
+npx playwright install chromium
+npm run test:e2e
+```
+
 ## Dependencies and licences
 
 - `react`: MIT
 - `react-dom`: MIT
+- `roughjs`: MIT
+- `zustand`: MIT
+- `@fontsource/caveat`: OFL-1.1
 - `@eslint/js`: MIT
+- `@playwright/test`: Apache-2.0
 - `@types/node`: MIT
 - `@types/react`: MIT
 - `@types/react-dom`: MIT
