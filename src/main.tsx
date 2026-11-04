@@ -1,3 +1,4 @@
+import '@fontsource/caveat';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
