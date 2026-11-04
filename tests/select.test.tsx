@@ -92,3 +92,46 @@ describe('select tool', () => {
     expect(useScene.getState().past).toHaveLength(1);
   });
 });
+
+describe('resize with a corner handle', () => {
+  function handle(name: string): Element {
+    const found = board().querySelector(`[data-handle="${name}"]`);
+    expect(found, `handle ${name}`).not.toBeNull();
+    return found!;
+  }
+
+  beforeEach(() => {
+    clickButton('Select');
+    drag([[50, 40]]);
+  });
+
+  it('dragging the bottom-right handle resizes from the top-left corner', () => {
+    drag([[110, 70], [130, 90], [160, 100]], handle('se'));
+    expect(rect()).toMatchObject({ x: 10, y: 20, w: 150, h: 80 });
+  });
+
+  it('dragging the top-left handle resizes from the bottom-right corner', () => {
+    drag([[10, 20], [0, 0]], handle('nw'));
+    expect(rect()).toMatchObject({ x: 0, y: 0, w: 110, h: 70 });
+  });
+
+  it('dragging the top-right handle keeps the bottom-left corner', () => {
+    drag([[110, 20], [130, 10]], handle('ne'));
+    expect(rect()).toMatchObject({ x: 10, y: 10, w: 120, h: 60 });
+  });
+
+  it('dragging the bottom-left handle keeps the top-right corner', () => {
+    drag([[10, 70], [30, 90]], handle('sw'));
+    expect(rect()).toMatchObject({ x: 30, y: 20, w: 80, h: 70 });
+  });
+
+  it('the handles follow the new box, and one resize is one undo step', () => {
+    drag([[110, 70], [130, 90], [160, 100]], handle('se'));
+    expect(handle('se').getAttribute('x')).toBe(String(160 - 4));
+    expect(handle('se').getAttribute('y')).toBe(String(100 - 4));
+    expect(handle('nw').getAttribute('x')).toBe(String(10 - 4));
+    expect(handle('nw').getAttribute('y')).toBe(String(20 - 4));
+    useScene.getState().undo();
+    expect(rect()).toMatchObject({ x: 10, y: 20, w: 100, h: 50 });
+  });
+});
