@@ -9,6 +9,13 @@ describe('README', () => {
     }
   });
 
+  it('has the browser test command and the one-time Chromium install', () => {
+    const readme = readFileSync('README.md', 'utf8');
+    for (const command of ['npm run test:e2e', 'npx playwright install chromium']) {
+      expect(readme, command).toContain(command);
+    }
+  });
+
   it('lists every dependency with its licence, and each licence is allowed', () => {
     const lines = readFileSync('README.md', 'utf8').split('\n');
     const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
