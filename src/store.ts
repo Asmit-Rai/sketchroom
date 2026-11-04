@@ -35,7 +35,7 @@ function newSeed(): number {
   return 1 + Math.floor(Math.random() * (2 ** 31 - 1));
 }
 
-function moveBy(el: SceneElement, dx: number, dy: number): SceneElement {
+export function moveBy(el: SceneElement, dx: number, dy: number): SceneElement {
   const moved = { ...el, x: el.x + dx, y: el.y + dy };
   if (el.points) moved.points = el.points.map(([px, py]): Point => [px + dx, py + dy]);
   return moved;

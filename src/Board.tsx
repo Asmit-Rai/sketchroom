@@ -1,10 +1,11 @@
 import { type KeyboardEvent, type MouseEvent, useState } from 'react';
 import rough from 'roughjs';
-import { type NewElement, type Point, type SceneElement, useScene } from './store';
+import { moveBy, type NewElement, type Point, type SceneElement, useScene } from './store';
 
-type Tool = 'rect' | 'diamond' | 'ellipse' | 'arrow' | 'line' | 'polyline' | 'text';
+type Tool = 'select' | 'rect' | 'diamond' | 'ellipse' | 'arrow' | 'line' | 'polyline' | 'text';
 
 const tools: { tool: Tool; label: string }[] = [
+  { tool: 'select', label: 'Select' },
   { tool: 'rect', label: 'Rectangle' },
   { tool: 'diamond', label: 'Diamond' },
   { tool: 'ellipse', label: 'Ellipse' },
@@ -92,11 +93,28 @@ function bounds(points: Point[]) {
 
 // the shape a drag through these points draws: freehand keeps every point,
 // the other tools use only the start and the end
-function dragged(tool: Exclude<Tool, 'text'>, points: Point[]): NewElement {
+function dragged(tool: Exclude<Tool, 'select' | 'text'>, points: Point[]): NewElement {
   if (tool === 'polyline') return { type: tool, ...bounds(points), points };
   const ends: Point[] = [points[0], points[points.length - 1]];
   if (tool === 'line' || tool === 'arrow') return { type: tool, ...bounds(ends), points: ends };
   return { type: tool, ...bounds(ends) };
+}
+
+// how far a drag through these points has moved
+function offset(points: Point[]): Point {
+  const [x0, y0] = points[0];
+  const [x1, y1] = points[points.length - 1];
+  return [x1 - x0, y1 - y0];
+}
+
+// the four corners of a box, each with its handle name
+function corners(el: SceneElement): [string, Point][] {
+  return [
+    ['nw', [el.x, el.y]],
+    ['ne', [el.x + el.w, el.y]],
+    ['sw', [el.x, el.y + el.h]],
+    ['se', [el.x + el.w, el.y + el.h]],
+  ];
 }
 
 function boardPoint(e: MouseEvent<SVGSVGElement>): Point {
@@ -106,18 +124,40 @@ function boardPoint(e: MouseEvent<SVGSVGElement>): Point {
 
 export default function Board() {
   const elements = useScene((state) => state.elements);
-  const [tool, setTool] = useState<Tool>('rect');
+  const [tool, setTool] = useState<Tool>('select');
+  const [selected, setSelected] = useState<string | null>(null);
   // the pointer points of the drag in progress: the mouse-down point, then every move
   const [drag, setDrag] = useState<Point[] | null>(null);
   // where the text tool was clicked, while its input is open
   const [typing, setTyping] = useState<Point | null>(null);
-  const draft = drag && tool !== 'text' && dragged(tool, drag);
+  const draft = drag && tool !== 'select' && tool !== 'text' && dragged(tool, drag);
+  // while the select tool drags, the selected shape is drawn moved until the mouse is released
+  const shown = elements.map((el) =>
+    tool === 'select' && drag && el.id === selected ? moveBy(el, ...offset(drag)) : el,
+  );
+  const selection = shown.find((el) => el.id === selected);
+
+  // the topmost shape whose box (plus a few pixels, for flat lines) holds the point
+  function hit([x, y]: Point) {
+    const pad = 5;
+    return [...elements]
+      .reverse()
+      .find((el) => x >= el.x - pad && x <= el.x + el.w + pad && y >= el.y - pad && y <= el.y + el.h + pad);
+  }
 
   function onMouseDown(e: MouseEvent<SVGSVGElement>) {
     // keeps the focus on the text input and stops text selection while dragging
     e.preventDefault();
-    if (tool === 'text') setTyping(boardPoint(e));
-    else setDrag([boardPoint(e)]);
+    const point = boardPoint(e);
+    if (tool === 'text') {
+      setTyping(point);
+    } else if (tool === 'select') {
+      const target = hit(point);
+      setSelected(target ? target.id : null);
+      setDrag(target ? [point] : null);
+    } else {
+      setDrag([point]);
+    }
   }
 
   function onMouseMove(e: MouseEvent<SVGSVGElement>) {
@@ -126,6 +166,13 @@ export default function Board() {
 
   function onMouseUp() {
     if (!drag || tool === 'text') return;
+    if (tool === 'select') {
+      // the whole drag is one move, so it is one undo step
+      const [dx, dy] = offset(drag);
+      if (selected && (dx || dy)) useScene.getState().moveElement(selected, dx, dy);
+      setDrag(null);
+      return;
+    }
     const element = dragged(tool, drag);
     if (element.w > 0 || element.h > 0) useScene.getState().addElement(element);
     setDrag(null);
@@ -154,6 +201,7 @@ export default function Board() {
             onClick={() => {
               setTool(t);
               setTyping(null);
+              setSelected(null);
             }}
           >
             {label}
@@ -170,10 +218,23 @@ export default function Board() {
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
         >
-          {elements.map((el) => (
+          {shown.map((el) => (
             <Shape key={el.id} el={el} />
           ))}
           {draft && <Shape el={{ ...draft, id: 'draft', seed: 1 }} />}
+          {selection &&
+            corners(selection).map(([name, [x, y]]) => (
+              <rect
+                key={name}
+                data-handle={name}
+                x={x - 4}
+                y={y - 4}
+                width={8}
+                height={8}
+                fill="white"
+                stroke="royalblue"
+              />
+            ))}
         </svg>
         {typing && (
           <input
