@@ -13,3 +13,19 @@ npm test           # run the unit tests (Vitest)
 npm run lint       # run ESLint
 npm run typecheck  # run tsc --noEmit
 ```
+
+## Dependencies and licences
+
+- `react`: MIT
+- `react-dom`: MIT
+- `@eslint/js`: MIT
+- `@types/node`: MIT
+- `@types/react`: MIT
+- `@types/react-dom`: MIT
+- `@vitejs/plugin-react`: MIT
+- `eslint`: MIT
+- `jsdom`: MIT
+- `typescript`: Apache-2.0
+- `typescript-eslint`: MIT
+- `vite`: MIT
+- `vitest`: MIT
