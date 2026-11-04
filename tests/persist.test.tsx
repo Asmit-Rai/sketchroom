@@ -239,3 +239,24 @@ describe('storage full', () => {
     expect(saved().elements).toHaveLength(2);
   });
 });
+
+describe('corrupt saved data when the backup cannot be written', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('a full storage during the backup gives no crash, an empty board and a notice that no backup was kept', () => {
+    localStorage.setItem(KEY, 'garbage that is too big to copy');
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+    });
+    useScene.getState().addElement(rect);
+    expect(() => renderApp()).not.toThrow();
+    expect(useScene.getState().elements).toEqual([]);
+    expect(container.querySelector('svg[data-testid="board"]')).not.toBeNull();
+    const notice = container.querySelector('[data-testid="notice"]')?.textContent;
+    expect(notice).toMatch(/could not be read/);
+    expect(notice).not.toMatch(/was kept/);
+    expect(localStorage.getItem('sketchroom:scene:backup')).toBeNull();
+  });
+});
