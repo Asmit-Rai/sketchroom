@@ -20,10 +20,14 @@ export type Box = Pick<SceneElement, 'x' | 'y' | 'w' | 'h'>;
 
 interface SceneState {
   elements: SceneElement[];
+  past: SceneElement[][];
+  future: SceneElement[][];
   addElement: (element: NewElement) => string;
   moveElement: (id: string, dx: number, dy: number) => void;
   resizeElement: (id: string, box: Box) => void;
   deleteElement: (id: string) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 // roughjs treats seed 0 as "random every time", so seeds start at 1
@@ -51,21 +55,48 @@ function resizeTo(el: SceneElement, box: Box): SceneElement {
   return resized;
 }
 
+// every change is one undo step: the old elements go on the past stack and redo is cleared
+function change(state: SceneState, elements: SceneElement[]) {
+  return { elements, past: [...state.past, state.elements], future: [] };
+}
+
 export const useScene = create<SceneState>()((set) => ({
   elements: [],
+  past: [],
+  future: [],
   addElement: (element) => {
     const id = crypto.randomUUID();
-    set((state) => ({ elements: [...state.elements, { ...element, id, seed: newSeed() }] }));
+    set((state) => change(state, [...state.elements, { ...element, id, seed: newSeed() }]));
     return id;
   },
   moveElement: (id, dx, dy) =>
-    set((state) => ({
-      elements: state.elements.map((el) => (el.id === id ? moveBy(el, dx, dy) : el)),
-    })),
+    set((state) =>
+      change(state, state.elements.map((el) => (el.id === id ? moveBy(el, dx, dy) : el))),
+    ),
   resizeElement: (id, box) =>
-    set((state) => ({
-      elements: state.elements.map((el) => (el.id === id ? resizeTo(el, box) : el)),
-    })),
+    set((state) =>
+      change(state, state.elements.map((el) => (el.id === id ? resizeTo(el, box) : el))),
+    ),
   deleteElement: (id) =>
-    set((state) => ({ elements: state.elements.filter((el) => el.id !== id) })),
+    set((state) => change(state, state.elements.filter((el) => el.id !== id))),
+  undo: () =>
+    set((state) =>
+      state.past.length === 0
+        ? state
+        : {
+            elements: state.past[state.past.length - 1],
+            past: state.past.slice(0, -1),
+            future: [state.elements, ...state.future],
+          },
+    ),
+  redo: () =>
+    set((state) =>
+      state.future.length === 0
+        ? state
+        : {
+            elements: state.future[0],
+            past: [...state.past, state.elements],
+            future: state.future.slice(1),
+          },
+    ),
 }));
