@@ -99,3 +99,18 @@ describe('store: resize', () => {
     expect(useScene.getState().elements[1]).toMatchObject(samples[2]);
   });
 });
+
+describe('store: delete', () => {
+  it.each(samples)('deletes a $type', (sample) => {
+    const id = useScene.getState().addElement(sample);
+    useScene.getState().deleteElement(id);
+    expect(useScene.getState().elements).toEqual([]);
+  });
+
+  it('deletes only the element with that id', () => {
+    const first = useScene.getState().addElement(samples[0]);
+    const second = useScene.getState().addElement(samples[2]);
+    useScene.getState().deleteElement(first);
+    expect(useScene.getState().elements.map((el) => el.id)).toEqual([second]);
+  });
+});
