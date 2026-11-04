@@ -41,8 +41,13 @@ export function parseScene(text: string): SceneElement[] | null {
   return Array.isArray(elements) && elements.every(isElement) ? elements : null;
 }
 
+// the saved and exported form of a board
+export function sceneText(elements: SceneElement[]): string {
+  return JSON.stringify({ elements });
+}
+
 export function saveScene(elements: SceneElement[]) {
-  localStorage.setItem(SCENE_KEY, JSON.stringify({ elements }));
+  localStorage.setItem(SCENE_KEY, sceneText(elements));
 }
 
 // null when nothing is saved; corrupt saved text is copied to the backup key and gives an empty board

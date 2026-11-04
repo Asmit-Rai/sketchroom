@@ -1,13 +1,43 @@
-import { useEffect, useState } from 'react';
+import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 import Board from './Board';
-import { loadScene, saveScene } from './persist';
+import { loadScene, parseScene, saveScene, sceneText } from './persist';
 import { useScene } from './store';
+
+function download(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function App() {
   const empty = useScene((state) => state.elements.length === 0);
   const { undo, redo } = useScene.getState();
   const [notice, setNotice] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const importInput = useRef<HTMLInputElement>(null);
+
+  function exportJson() {
+    const text = sceneText(useScene.getState().elements);
+    download(new Blob([text], { type: 'application/json' }), 'sketchroom.json');
+  }
+
+  async function importJson(e: ChangeEvent<HTMLInputElement>) {
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    const elements = parseScene(await file.text());
+    // lets the same file be picked again
+    input.value = '';
+    if (elements) {
+      useScene.getState().replaceElements(elements);
+      setNotice(null);
+    } else {
+      setNotice('That file is not a Sketchroom board, so nothing was imported.');
+    }
+  }
 
   // restore the saved board once, before autosave starts listening
   useEffect(() => {
@@ -65,6 +95,19 @@ export default function App() {
         <button type="button" onClick={redo}>
           Redo
         </button>
+        <button type="button" onClick={exportJson}>
+          Export JSON
+        </button>
+        <button type="button" onClick={() => importInput.current?.click()}>
+          Import JSON
+        </button>
+        <input
+          ref={importInput}
+          type="file"
+          accept=".json,application/json"
+          hidden
+          onChange={importJson}
+        />
       </div>
       {notice && (
         <p role="alert" data-testid="notice">

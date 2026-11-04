@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     exclude: [...configDefaults.exclude, 'e2e/**'],
+    setupFiles: ['tests/setup.ts'],
     // Node 22+ has its own localStorage global, which hides the jsdom one in tests
     execArgv: process.allowedNodeEnvironmentFlags.has('--experimental-webstorage')
       ? ['--no-experimental-webstorage']

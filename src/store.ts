@@ -29,6 +29,7 @@ interface SceneState {
   undo: () => void;
   redo: () => void;
   loadElements: (elements: SceneElement[]) => void;
+  replaceElements: (elements: SceneElement[]) => void;
 }
 
 // roughjs treats seed 0 as "random every time", so seeds start at 1
@@ -102,4 +103,6 @@ export const useScene = create<SceneState>()((set) => ({
     ),
   // a loaded board starts a fresh history
   loadElements: (elements) => set({ elements, past: [], future: [] }),
+  // an import replaces the whole board in one undo step
+  replaceElements: (elements) => set((state) => change(state, elements)),
 }));
