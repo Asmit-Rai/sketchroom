@@ -135,3 +135,35 @@ describe('resize with a corner handle', () => {
     expect(rect()).toMatchObject({ x: 10, y: 20, w: 100, h: 50 });
   });
 });
+
+describe('delete the selected shape', () => {
+  function press(key: string) {
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    });
+  }
+
+  it.each(['Delete', 'Backspace'])('%s deletes the selected shape', (key) => {
+    useScene.getState().addElement({ type: 'ellipse', x: 300, y: 300, w: 50, h: 50 });
+    clickButton('Select');
+    drag([[50, 40]]);
+    press(key);
+    expect(useScene.getState().elements.map((el) => el.type)).toEqual(['ellipse']);
+    expect(handles()).toHaveLength(0);
+  });
+
+  it('does nothing when no shape is selected', () => {
+    clickButton('Select');
+    press('Delete');
+    press('Backspace');
+    expect(useScene.getState().elements).toHaveLength(1);
+  });
+
+  it('the delete is one undo step', () => {
+    clickButton('Select');
+    drag([[50, 40]]);
+    press('Delete');
+    useScene.getState().undo();
+    expect(rect()).toMatchObject({ x: 10, y: 20, w: 100, h: 50 });
+  });
+});
