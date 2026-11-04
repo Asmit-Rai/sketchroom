@@ -121,3 +121,51 @@ describe('restore on load', () => {
     expect(container.querySelector('[data-testid="empty-hint"]')).not.toBeNull();
   });
 });
+
+describe('corrupt saved data', () => {
+  const BACKUP = 'sketchroom:scene:backup';
+  const good = { id: 'a', type: 'rect', x: 10, y: 20, w: 100, h: 50, seed: 7 };
+
+  function notice() {
+    return container.querySelector('[data-testid="notice"]');
+  }
+
+  it.each([
+    ['bad JSON', '{"elements": [ {"id": "a",'],
+    ['not an object', '"hello"'],
+    ['null', 'null'],
+    ['an array instead of the scene', JSON.stringify([good])],
+    ['elements is not a list', JSON.stringify({ elements: 5 })],
+    ['an unknown type', JSON.stringify({ elements: [{ ...good, type: 'star' }] })],
+    ['a missing field', JSON.stringify({ elements: [{ ...good, seed: undefined }] })],
+    ['a number stored as text', JSON.stringify({ elements: [{ ...good, x: '10' }] })],
+    ['a line without points', JSON.stringify({ elements: [{ ...good, type: 'line' }] })],
+    ['a bad point', JSON.stringify({ elements: [{ ...good, type: 'arrow', points: [[0, 0], [1]] }] })],
+  ])('%s: the raw text goes to the backup key, an empty board starts, a notice shows', (_name, raw) => {
+    localStorage.setItem(KEY, raw);
+    useScene.getState().addElement(rect);
+    expect(() => renderApp()).not.toThrow();
+    expect(localStorage.getItem(BACKUP)).toBe(raw);
+    expect(useScene.getState().elements).toEqual([]);
+    expect(container.querySelectorAll('svg[data-testid="board"] [data-id]')).toHaveLength(0);
+    expect(notice()?.textContent).toMatch(/could not be read/);
+  });
+
+  it('shows no notice and writes no backup for good saved data', () => {
+    localStorage.setItem(KEY, JSON.stringify({ elements: [good] }));
+    renderApp();
+    expect(notice()).toBeNull();
+    expect(localStorage.getItem(BACKUP)).toBeNull();
+  });
+
+  it('drawing still works after a corrupt load', () => {
+    localStorage.setItem(KEY, 'garbage');
+    renderApp();
+    act(() => {
+      useScene.getState().addElement(rect);
+    });
+    wait(300);
+    expect(saved().elements).toHaveLength(1);
+    expect(localStorage.getItem(BACKUP)).toBe('garbage');
+  });
+});
