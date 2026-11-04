@@ -50,12 +50,17 @@ export function saveScene(elements: SceneElement[]) {
   localStorage.setItem(SCENE_KEY, sceneText(elements));
 }
 
-// null when nothing is saved; corrupt saved text is copied to the backup key and gives an empty board
-export function loadScene(): { elements: SceneElement[]; corrupt: boolean } | null {
+// null when nothing is saved; corrupt saved text gives an empty board and is copied to
+// the backup key, unless the storage is too full for the copy
+export function loadScene(): { elements: SceneElement[]; corrupt: boolean; backedUp: boolean } | null {
   const raw = localStorage.getItem(SCENE_KEY);
   if (raw === null) return null;
   const elements = parseScene(raw);
-  if (elements) return { elements, corrupt: false };
-  localStorage.setItem(BACKUP_KEY, raw);
-  return { elements: [], corrupt: true };
+  if (elements) return { elements, corrupt: false, backedUp: false };
+  try {
+    localStorage.setItem(BACKUP_KEY, raw);
+    return { elements: [], corrupt: true, backedUp: true };
+  } catch {
+    return { elements: [], corrupt: true, backedUp: false };
+  }
 }

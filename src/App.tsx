@@ -75,7 +75,9 @@ export default function App() {
     if (saved.corrupt) {
       setNotice(
         'The saved board could not be read, so an empty board was started. ' +
-          'The saved text was kept in sketchroom:scene:backup.',
+          (saved.backedUp
+            ? 'The saved text was kept in sketchroom:scene:backup.'
+            : 'The browser storage is full, so the saved text could not be kept as a backup.'),
       );
     }
   }, []);
