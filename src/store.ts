@@ -41,7 +41,7 @@ export function moveBy(el: SceneElement, dx: number, dy: number): SceneElement {
   return moved;
 }
 
-function resizeTo(el: SceneElement, box: Box): SceneElement {
+export function resizeTo(el: SceneElement, box: Box): SceneElement {
   const resized = { ...el, ...box };
   // a zero-size side has all its points on one coordinate, so any scale works there
   const sx = el.w ? box.w / el.w : 1;

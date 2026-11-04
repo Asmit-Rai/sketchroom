@@ -1,6 +1,14 @@
 import { type KeyboardEvent, type MouseEvent, useState } from 'react';
 import rough from 'roughjs';
-import { moveBy, type NewElement, type Point, type SceneElement, useScene } from './store';
+import {
+  type Box,
+  moveBy,
+  type NewElement,
+  type Point,
+  resizeTo,
+  type SceneElement,
+  useScene,
+} from './store';
 
 type Tool = 'select' | 'rect' | 'diamond' | 'ellipse' | 'arrow' | 'line' | 'polyline' | 'text';
 
@@ -117,6 +125,15 @@ function corners(el: SceneElement): [string, Point][] {
   ];
 }
 
+// the new box when a corner handle is dragged by (dx, dy): the opposite corner stays put
+function resizedBox(el: SceneElement, handle: string, [dx, dy]: Point): Box {
+  const fixedX = handle.includes('w') ? el.x + el.w : el.x;
+  const fixedY = handle.includes('n') ? el.y + el.h : el.y;
+  const x = (handle.includes('w') ? el.x : el.x + el.w) + dx;
+  const y = (handle.includes('n') ? el.y : el.y + el.h) + dy;
+  return { x: Math.min(fixedX, x), y: Math.min(fixedY, y), w: Math.abs(x - fixedX), h: Math.abs(y - fixedY) };
+}
+
 function boardPoint(e: MouseEvent<SVGSVGElement>): Point {
   const rect = e.currentTarget.getBoundingClientRect();
   return [e.clientX - rect.left, e.clientY - rect.top];
@@ -126,15 +143,18 @@ export default function Board() {
   const elements = useScene((state) => state.elements);
   const [tool, setTool] = useState<Tool>('select');
   const [selected, setSelected] = useState<string | null>(null);
+  // the corner handle being dragged, if any
+  const [handle, setHandle] = useState<string | null>(null);
   // the pointer points of the drag in progress: the mouse-down point, then every move
   const [drag, setDrag] = useState<Point[] | null>(null);
   // where the text tool was clicked, while its input is open
   const [typing, setTyping] = useState<Point | null>(null);
   const draft = drag && tool !== 'select' && tool !== 'text' && dragged(tool, drag);
-  // while the select tool drags, the selected shape is drawn moved until the mouse is released
-  const shown = elements.map((el) =>
-    tool === 'select' && drag && el.id === selected ? moveBy(el, ...offset(drag)) : el,
-  );
+  // while the select tool drags, the selected shape is drawn moved or resized until the mouse is released
+  const shown = elements.map((el) => {
+    if (tool !== 'select' || !drag || el.id !== selected) return el;
+    return handle ? resizeTo(el, resizedBox(el, handle, offset(drag))) : moveBy(el, ...offset(drag));
+  });
   const selection = shown.find((el) => el.id === selected);
 
   // the topmost shape whose box (plus a few pixels, for flat lines) holds the point
@@ -151,6 +171,9 @@ export default function Board() {
     const point = boardPoint(e);
     if (tool === 'text') {
       setTyping(point);
+    } else if (tool === 'select' && selected && e.target instanceof Element && e.target.hasAttribute('data-handle')) {
+      setHandle(e.target.getAttribute('data-handle'));
+      setDrag([point]);
     } else if (tool === 'select') {
       const target = hit(point);
       setSelected(target ? target.id : null);
@@ -167,10 +190,15 @@ export default function Board() {
   function onMouseUp() {
     if (!drag || tool === 'text') return;
     if (tool === 'select') {
-      // the whole drag is one move, so it is one undo step
+      // the whole drag is one move or one resize, so it is one undo step
       const [dx, dy] = offset(drag);
-      if (selected && (dx || dy)) useScene.getState().moveElement(selected, dx, dy);
+      const el = elements.find((item) => item.id === selected);
+      if (el && (dx || dy)) {
+        if (handle) useScene.getState().resizeElement(el.id, resizedBox(el, handle, [dx, dy]));
+        else useScene.getState().moveElement(el.id, dx, dy);
+      }
       setDrag(null);
+      setHandle(null);
       return;
     }
     const element = dragged(tool, drag);
