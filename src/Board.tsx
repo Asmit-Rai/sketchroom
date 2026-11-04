@@ -1,8 +1,8 @@
-import { type MouseEvent, useState } from 'react';
+import { type KeyboardEvent, type MouseEvent, useState } from 'react';
 import rough from 'roughjs';
 import { type NewElement, type Point, type SceneElement, useScene } from './store';
 
-type Tool = 'rect' | 'diamond' | 'ellipse' | 'arrow' | 'line' | 'polyline';
+type Tool = 'rect' | 'diamond' | 'ellipse' | 'arrow' | 'line' | 'polyline' | 'text';
 
 const tools: { tool: Tool; label: string }[] = [
   { tool: 'rect', label: 'Rectangle' },
@@ -11,7 +11,10 @@ const tools: { tool: Tool; label: string }[] = [
   { tool: 'arrow', label: 'Arrow' },
   { tool: 'line', label: 'Line' },
   { tool: 'polyline', label: 'Freehand' },
+  { tool: 'text', label: 'Text' },
 ];
+
+const FONT_SIZE = 24;
 
 const generator = rough.generator();
 
@@ -89,7 +92,7 @@ function bounds(points: Point[]) {
 
 // the shape a drag through these points draws: freehand keeps every point,
 // the other tools use only the start and the end
-function dragged(tool: Tool, points: Point[]): NewElement {
+function dragged(tool: Exclude<Tool, 'text'>, points: Point[]): NewElement {
   if (tool === 'polyline') return { type: tool, ...bounds(points), points };
   const ends: Point[] = [points[0], points[points.length - 1]];
   if (tool === 'line' || tool === 'arrow') return { type: tool, ...bounds(ends), points: ends };
@@ -106,10 +109,15 @@ export default function Board() {
   const [tool, setTool] = useState<Tool>('rect');
   // the pointer points of the drag in progress: the mouse-down point, then every move
   const [drag, setDrag] = useState<Point[] | null>(null);
-  const draft = drag && dragged(tool, drag);
+  // where the text tool was clicked, while its input is open
+  const [typing, setTyping] = useState<Point | null>(null);
+  const draft = drag && tool !== 'text' && dragged(tool, drag);
 
   function onMouseDown(e: MouseEvent<SVGSVGElement>) {
-    setDrag([boardPoint(e)]);
+    // keeps the focus on the text input and stops text selection while dragging
+    e.preventDefault();
+    if (tool === 'text') setTyping(boardPoint(e));
+    else setDrag([boardPoint(e)]);
   }
 
   function onMouseMove(e: MouseEvent<SVGSVGElement>) {
@@ -117,35 +125,67 @@ export default function Board() {
   }
 
   function onMouseUp() {
-    if (!drag) return;
+    if (!drag || tool === 'text') return;
     const element = dragged(tool, drag);
     if (element.w > 0 || element.h > 0) useScene.getState().addElement(element);
     setDrag(null);
+  }
+
+  function onTextKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (!typing) return;
+    const text = e.currentTarget.value;
+    if (e.key === 'Enter' && text) {
+      const [x, y] = typing;
+      useScene.getState().addElement({
+        type: 'text', x, y, w: text.length * FONT_SIZE * 0.5, h: FONT_SIZE, text,
+      });
+    }
+    if (e.key === 'Enter' || e.key === 'Escape') setTyping(null);
   }
 
   return (
     <>
       <div role="toolbar">
         {tools.map(({ tool: t, label }) => (
-          <button key={t} type="button" aria-pressed={tool === t} onClick={() => setTool(t)}>
+          <button
+            key={t}
+            type="button"
+            aria-pressed={tool === t}
+            onClick={() => {
+              setTool(t);
+              setTyping(null);
+            }}
+          >
             {label}
           </button>
         ))}
       </div>
-      <svg
-        data-testid="board"
-        width="100%"
-        height="600"
-        style={{ display: 'block', border: '1px solid #ccc' }}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-      >
-        {elements.map((el) => (
-          <Shape key={el.id} el={el} />
-        ))}
-        {draft && <Shape el={{ ...draft, id: 'draft', seed: 1 }} />}
-      </svg>
+      <div style={{ position: 'relative' }}>
+        <svg
+          data-testid="board"
+          width="100%"
+          height="600"
+          style={{ display: 'block', border: '1px solid #ccc' }}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+        >
+          {elements.map((el) => (
+            <Shape key={el.id} el={el} />
+          ))}
+          {draft && <Shape el={{ ...draft, id: 'draft', seed: 1 }} />}
+        </svg>
+        {typing && (
+          <input
+            key={typing.join()}
+            data-testid="text-input"
+            aria-label="Text"
+            autoFocus
+            style={{ position: 'absolute', left: typing[0], top: typing[1], fontSize: FONT_SIZE }}
+            onKeyDown={onTextKeyDown}
+          />
+        )}
+      </div>
     </>
   );
 }
