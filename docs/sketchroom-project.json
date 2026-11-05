@@ -14,8 +14,8 @@
     { "id": "localstorage", "type": "rect", "x": 976, "y": 400, "w": 184, "h": 80, "seed": 12 },
     { "id": "localstorage-label", "type": "text", "x": 996, "y": 428, "w": 144, "h": 24, "text": "localStorage", "seed": 13 },
     { "id": "agent", "type": "rect", "x": 40, "y": 400, "w": 220, "h": 80, "seed": 14 },
-    { "id": "agent-label", "type": "text", "x": 120, "y": 428, "w": 60, "h": 24, "text": "Agent", "seed": 15 },
+    { "id": "agent-label", "type": "text", "x": 60, "y": 428, "w": 180, "h": 24, "text": "Agent (planned)", "seed": 15 },
     { "id": "drawing-api", "type": "rect", "x": 348, "y": 400, "w": 292, "h": 80, "seed": 16 },
-    { "id": "drawing-api-label", "type": "text", "x": 428, "y": 428, "w": 132, "h": 24, "text": "Drawing API", "seed": 17 }
+    { "id": "drawing-api-label", "type": "text", "x": 368, "y": 428, "w": 252, "h": 24, "text": "Drawing API (planned)", "seed": 17 }
   ]
 }
