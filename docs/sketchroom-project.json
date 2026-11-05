@@ -1,0 +1,5 @@
+{
+  "elements": [
+    { "id": "title", "type": "text", "x": 40, "y": 24, "w": 160, "h": 32, "text": "Sketchroom", "seed": 1 }
+  ]
+}
