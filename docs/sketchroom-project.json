@@ -1,0 +1,28 @@
+{
+  "elements": [
+    { "id": "title", "type": "text", "x": 40, "y": 24, "w": 160, "h": 32, "text": "Sketchroom", "seed": 1 },
+    { "id": "person", "type": "rect", "x": 40, "y": 120, "w": 220, "h": 80, "seed": 2 },
+    { "id": "person-label", "type": "text", "x": 114, "y": 148, "w": 72, "h": 24, "text": "Person", "seed": 3 },
+    { "id": "app", "type": "rect", "x": 728, "y": 400, "w": 160, "h": 80, "seed": 4 },
+    { "id": "app-label", "type": "text", "x": 766, "y": 428, "w": 84, "h": 24, "text": "App.tsx", "seed": 5 },
+    { "id": "board", "type": "rect", "x": 348, "y": 120, "w": 292, "h": 80, "seed": 6 },
+    { "id": "board-label", "type": "text", "x": 440, "y": 148, "w": 108, "h": 24, "text": "Board.tsx", "seed": 7 },
+    { "id": "store", "type": "rect", "x": 728, "y": 120, "w": 160, "h": 80, "seed": 8 },
+    { "id": "store-label", "type": "text", "x": 760, "y": 148, "w": 96, "h": 24, "text": "store.ts", "seed": 9 },
+    { "id": "persist", "type": "rect", "x": 976, "y": 120, "w": 184, "h": 80, "seed": 10 },
+    { "id": "persist-label", "type": "text", "x": 1008, "y": 148, "w": 120, "h": 24, "text": "persist.ts", "seed": 11 },
+    { "id": "localstorage", "type": "rect", "x": 976, "y": 400, "w": 184, "h": 80, "seed": 12 },
+    { "id": "localstorage-label", "type": "text", "x": 996, "y": 428, "w": 144, "h": 24, "text": "localStorage", "seed": 13 },
+    { "id": "agent", "type": "rect", "x": 40, "y": 400, "w": 220, "h": 80, "seed": 14 },
+    { "id": "agent-label", "type": "text", "x": 60, "y": 428, "w": 180, "h": 24, "text": "Agent (planned)", "seed": 15 },
+    { "id": "drawing-api", "type": "rect", "x": 348, "y": 400, "w": 292, "h": 80, "seed": 16 },
+    { "id": "drawing-api-label", "type": "text", "x": 368, "y": 428, "w": 252, "h": 24, "text": "Drawing API (planned)", "seed": 17 },
+    { "id": "arrow-person-board", "type": "arrow", "x": 266, "y": 160, "w": 76, "h": 0, "points": [[266, 160], [342, 160]], "seed": 18 },
+    { "id": "arrow-board-store", "type": "arrow", "x": 646, "y": 160, "w": 76, "h": 0, "points": [[646, 160], [722, 160]], "seed": 19 },
+    { "id": "arrow-store-persist", "type": "arrow", "x": 894, "y": 160, "w": 76, "h": 0, "points": [[894, 160], [970, 160]], "seed": 20 },
+    { "id": "arrow-persist-localstorage", "type": "arrow", "x": 1068, "y": 206, "w": 0, "h": 188, "points": [[1068, 206], [1068, 394]], "seed": 21 },
+    { "id": "arrow-app-store", "type": "arrow", "x": 808, "y": 206, "w": 0, "h": 188, "points": [[808, 394], [808, 206]], "seed": 22 },
+    { "id": "arrow-agent-drawing-api", "type": "arrow", "x": 266, "y": 440, "w": 76, "h": 0, "points": [[266, 440], [342, 440]], "seed": 23 },
+    { "id": "arrow-drawing-api-board", "type": "arrow", "x": 494, "y": 206, "w": 0, "h": 188, "points": [[494, 394], [494, 206]], "seed": 24 }
+  ]
+}
