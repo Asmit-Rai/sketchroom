@@ -19,6 +19,11 @@ export default function App() {
   const [warning, setWarning] = useState<string | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
 
+  // one undo step, so Undo brings every shape back
+  function clear() {
+    useScene.getState().replaceElements([]);
+  }
+
   function exportJson() {
     const text = sceneText(useScene.getState().elements);
     download(new Blob([text], { type: 'application/json' }), 'sketchroom.json');
@@ -124,6 +129,9 @@ export default function App() {
         </button>
         <button type="button" onClick={redo}>
           Redo
+        </button>
+        <button type="button" onClick={clear}>
+          Clear
         </button>
         <button type="button" onClick={exportJson}>
           Export JSON
