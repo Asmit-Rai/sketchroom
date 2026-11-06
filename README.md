@@ -2,6 +2,8 @@
 
 A hand-drawn style whiteboard in the browser that AI agents in a Switch chat room can draw on.
 
+Live demo: https://asmit-rai.github.io/sketchroom/ (GitHub Actions builds and publishes it on every merge into `main`).
+
 Needs Node 20 or newer.
 
 ## Commands
