@@ -19,9 +19,9 @@ export default function App() {
   const [warning, setWarning] = useState<string | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
 
-  // one undo step, so Undo brings every shape back
+  // one undo step; an empty board stays as it is, so Undo still undoes the change before it
   function clear() {
-    useScene.getState().replaceElements([]);
+    if (useScene.getState().elements.length > 0) useScene.getState().replaceElements([]);
   }
 
   function exportJson() {
