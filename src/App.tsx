@@ -18,6 +18,12 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // the theme lives on the html element, so the whole page can follow it
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // one undo step; an empty board stays as it is, so Undo still undoes the change before it
   function clear() {
@@ -141,6 +147,13 @@ export default function App() {
         </button>
         <button type="button" onClick={exportPng}>
           Export PNG
+        </button>
+        <button
+          type="button"
+          aria-pressed={theme === 'dark'}
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        >
+          Dark mode
         </button>
         <input
           ref={importInput}
