@@ -148,7 +148,7 @@ export default function App() {
   return (
     <main>
       <h1>Sketchroom</h1>
-      <div>
+      <div className="button-row">
         <button type="button" onClick={undo}>
           Undo
         </button>

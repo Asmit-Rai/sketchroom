@@ -237,7 +237,7 @@ export default function Board() {
 
   return (
     <>
-      <div role="toolbar">
+      <div role="toolbar" className="button-row">
         {tools.map(({ tool: t, label }) => (
           <button
             key={t}
