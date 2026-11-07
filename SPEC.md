@@ -388,5 +388,5 @@ Done means:
 ## 7. Out of scope
 
 Multiplayer and live cursors, accounts, cloud sync, any database, mobile touch
-design, image upload, templates, dark mode, SVG export, eraser, in-app AI. Do
+design, image upload, templates, SVG export, eraser, in-app AI. Do
 not add them, even if they look easy.

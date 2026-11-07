@@ -3,6 +3,15 @@ import Board from './Board';
 import { loadScene, parseScene, saveScene, sceneText } from './persist';
 import { useScene } from './store';
 
+const THEME_KEY = 'sketchroom:theme:v1';
+
+type Theme = 'light' | 'dark';
+
+// the saved theme, or light when nothing or an unknown value is saved
+function savedTheme(): Theme {
+  return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
+}
+
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -18,6 +27,22 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
+  const [theme, setTheme] = useState<Theme>(savedTheme);
+
+  function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      // storage full: the theme still changes, it is only not remembered
+    }
+  }
+
+  // the theme lives on the html element, so the whole page can follow it
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // one undo step; an empty board stays as it is, so Undo still undoes the change before it
   function clear() {
@@ -123,7 +148,7 @@ export default function App() {
   return (
     <main>
       <h1>Sketchroom</h1>
-      <div>
+      <div className="button-row">
         <button type="button" onClick={undo}>
           Undo
         </button>
@@ -141,6 +166,13 @@ export default function App() {
         </button>
         <button type="button" onClick={exportPng}>
           Export PNG
+        </button>
+        <button
+          type="button"
+          aria-pressed={theme === 'dark'}
+          onClick={toggleTheme}
+        >
+          Dark mode
         </button>
         <input
           ref={importInput}

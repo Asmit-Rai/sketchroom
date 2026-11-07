@@ -1,0 +1,8 @@
+# T5 plan: make the whole app look modern: a clean toolbar, rounded buttons, and a dark mode button that remembers my choice
+
+Steps (what | items | type | test file | command):
+1. add a "Dark mode" button at the end of the Undo, Redo, Clear, Export and Import row that toggles data-theme on the html element and aria-pressed, without touching shapes, undo or sketchroom:scene:v1, keeping every existing button's name and order | items 1, 4, 10 | unit | tests/theme.test.tsx | npx vitest run tests/theme.test.tsx
+2. save the theme to localStorage sketchroom:theme:v1 and start from it, falling back to light when nothing or an unknown value is saved | items 2, 3 | unit | tests/theme-persist.test.tsx | npx vitest run tests/theme-persist.test.tsx
+3. add src/styles.css imported from main.tsx: tool buttons in one row and history and file buttons in another, even spacing, same button size, rounded corners, clear pressed tool, a dark palette under data-theme="dark" with the board kept white; no remote URL and no package.json change | items 8 | unit | tests/styles.test.ts | npx vitest run tests/styles.test.ts
+4. remove dark mode from SPEC.md section 7 out of scope | items 9 | unit | tests/spec-scope.test.ts | npx vitest run tests/spec-scope.test.ts
+5. check the look by hand | items 5, 6, 7 | manual | - | run npm start, open http://127.0.0.1:4321, draw a black rectangle; in light mode check the tools sit in one row and history and file buttons in another with even spacing, same size and rounded corners, and the pressed tool stands out; click Dark mode and check the page is dark, heading, text and buttons are light and readable, buttons stay rounded, and the board stays white with the rectangle visible
